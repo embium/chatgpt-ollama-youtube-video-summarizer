@@ -1,3 +1,5 @@
+Original code is located at https://github.com/ozdemir08/youtube-video-summarizer, this is a fork that adds Ollama support!
+
 # Youtube Summarizer
 
 Meet the "Youtube Summarizer" – your game-changer in Obsidian note-taking. Tired
