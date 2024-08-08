@@ -1,35 +1,34 @@
-# Youtube Summarizer 
+# Youtube Summarizer
 
 Meet the "Youtube Summarizer" – your game-changer in Obsidian note-taking. Tired
 of lengthy YouTube videos? This plugin downloads video transcripts and taps into
-OpenAI's ChatGPT3.5 to distill key points seamlessly into your Obsidian notes.
+OpenAI's ChatGPT3.5 and Ollama to distill key points seamlessly into your Obsidian notes.
 From Andrew Huberman's insights to any content-rich video, it turns hours into
 minutes, making knowledge curation a breeze. Elevate your note-taking game with
 efficient information synthesis – your shortcut to insightful, concise notes.
 
-
-## Demo 
+## Demo
 
 ![Alt Text](demo/demo.gif)
 
 Please be aware that the summarization process for lengthy videos may require a
 longer duration.
 
-
-## How it works? 
+## How it works?
 
 "Youtube Summarizer" downloads YouTube video information and transcripts, breaks
-the transcript into chunks, and leverages OpenAI's ChatGPT3.5 to extract key
+the transcript into chunks, and leverages OpenAI's ChatGPT3.5 and Ollama to extract key
 points. The final output is a concise Obsidian note, offering a streamlined way
 to distill lengthy videos into insightful summaries.
 
 ## Credits
-- [Youtube Transcript](https://www.npmjs.com/package/youtube-transcript) for
-  downloading Youtube Transcript.
-- [Podcast Note](https://github.com/marcjulianschwarz/obsidian-podcast-note) for
-  fetching the metadata of Youtube videos.
 
-## Feedback & Donations 
+-   [Youtube Transcript](https://www.npmjs.com/package/youtube-transcript) for
+    downloading Youtube Transcript.
+-   [Podcast Note](https://github.com/marcjulianschwarz/obsidian-podcast-note) for
+    fetching the metadata of Youtube videos.
+
+## Feedback & Donations
 
 Your feedback is invaluable! If you have thoughts or suggestions about the
 "Youtube Summarizer" plugin, we'd love to hear from you. Share your feedback

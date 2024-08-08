@@ -1,7 +1,7 @@
 {
-	"name": "youtube-summarizer",
+	"name": "chatgpt-ollama-youtube-summarizer",
 	"version": "1.0.2",
-	"description": "A plugin to summarize Youtube videos using ChatGPT 3.5.",
+	"description": "A plugin to summarize Youtube videos using ChatGPT 3.5 and Ollama.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
