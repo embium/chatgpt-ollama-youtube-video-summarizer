@@ -1,8 +1,8 @@
 {
 	"id": "youtube-summarizer",
 	"name": "ChatGPT & Ollama Youtube Summarizer",
-	"version": "0.0.1",
-	"minAppVersion": "0.0.1",
+	"version": "1.0.0",
+	"minAppVersion": "1.0.0",
 	"description": "A plugin to summarize the transcripts of Youtube videos using ChatGPT and Ollama (Local).",
 	"author": "Michael Mooney",
 	"authorUrl": "https://github.com/ozdemir08",
