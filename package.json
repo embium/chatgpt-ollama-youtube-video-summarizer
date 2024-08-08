@@ -22,7 +22,8 @@
 		"typescript": "4.7.4"
 	},
 	"dependencies": {
+		"ollama": "^0.5.6",
 		"openai": "^4.20.1",
-		"youtube-transcript": "^1.0.6"
+		"youtube-transcript": "^1.2.1"
 	}
 }

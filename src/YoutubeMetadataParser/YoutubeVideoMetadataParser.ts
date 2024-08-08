@@ -4,12 +4,12 @@ import { YoutubeVideo, YoutubeVideoContent } from "./Models";
 import { PluginSettings, YOUTUBE_BASE_URL } from "settings";
 
 export class YoutubeMetadataParser {
-	constructor(private settings: PluginSettings) { }
+	constructor(private settings: PluginSettings) {}
 
 	async requestHTML(url: string) {
 		try {
-			let response = await request({ url: url, method: "GET" });
-			let parser = new DOMParser();
+			const response = await request({ url: url, method: "GET" });
+			const parser = new DOMParser();
 			return parser.parseFromString(response, "text/html");
 		} catch (reason) {
 			new Notice("Error loading podcast: " + reason);
@@ -31,7 +31,7 @@ export class YoutubeMetadataParser {
 	applyTemplate(video: YoutubeVideo): YoutubeVideoContent {
 		video = this.sanitizePodcast(video);
 		console.debug("template format", this.settings.templateFormat);
-		let content = this.settings.templateFormat
+		const content = this.settings.templateFormat
 			.replace(/{{Title}}/g, video.title)
 			.replace(/{{ImageURL}}/g, video.imageLink)
 			.replace(/{{Description}}/g, video.desc)
@@ -45,11 +45,11 @@ export class YoutubeMetadataParser {
 	}
 
 	metaOG(root: Document, attribute: string, og: string) {
-		let titleTag = root.querySelector(
-			"meta[" + attribute + "='og:" + og + "']",
+		const titleTag = root.querySelector(
+			"meta[" + attribute + "='og:" + og + "']"
 		);
 		if (titleTag) {
-			let title = titleTag.getAttribute("content");
+			const title = titleTag.getAttribute("content");
 			if (title) {
 				return title;
 			}
@@ -58,7 +58,7 @@ export class YoutubeMetadataParser {
 	}
 
 	async loadVideo(root: Document, url: string): Promise<YoutubeVideo> {
-		let podcast = DEFAULT_VIDEO;
+		const podcast = DEFAULT_VIDEO;
 		podcast.url = url;
 		podcast.date = moment().format("YYYY-MM-DD");
 
@@ -82,11 +82,11 @@ export class YoutubeMetadataParser {
 	}
 
 	async getVideoNote(url: string): Promise<YoutubeVideoContent> {
-		let root = await this.requestHTML(url);
+		const root = await this.requestHTML(url);
 
 		if (root) {
-			let podcast = await this.loadVideo(root, url);
-			let podcastNote = this.applyTemplate(podcast);
+			const podcast = await this.loadVideo(root, url);
+			const podcastNote = this.applyTemplate(podcast);
 			return podcastNote;
 		} else {
 			return { title: "", content: "" };

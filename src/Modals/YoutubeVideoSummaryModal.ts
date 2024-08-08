@@ -2,10 +2,12 @@ import { App, Editor, Modal, Notice } from "obsidian";
 import { OpenAIClient } from "src/OpenAi/OpenAiClient";
 import { TranscriptSummarizer } from "src/TranscriptSummarizer";
 import { PluginSettings, YOUTUBE_BASE_URL } from "settings";
+import { OllamaClient } from "src/Ollama/OllamaClient";
 
 export class YoutubeVideoSummaryModal extends Modal {
 	editor: Editor;
 	openAiClient: OpenAIClient;
+	ollamaClient: OllamaClient;
 	transcriptSummarizer: TranscriptSummarizer;
 	settings: PluginSettings;
 
@@ -14,7 +16,10 @@ export class YoutubeVideoSummaryModal extends Modal {
 		this.settings = settings;
 		this.editor = editor;
 		this.openAiClient = new OpenAIClient(this.settings);
-		this.transcriptSummarizer = new TranscriptSummarizer(this.openAiClient, this.settings);
+		this.transcriptSummarizer = new TranscriptSummarizer(
+			this.openAiClient,
+			this.settings
+		);
 	}
 
 	onOpen() {
@@ -33,9 +38,10 @@ export class YoutubeVideoSummaryModal extends Modal {
 			// handle both full URL and only video IDs
 			let url = input.value;
 			console.debug("URL: ", url);
-			if (url.search('https://') == -1 && url.search('watch?') == -1) url = `https://www.${YOUTUBE_BASE_URL}/watch?v=${url}`;
+			if (url.search("https://") == -1 && url.search("watch?") == -1)
+				url = `https://www.${YOUTUBE_BASE_URL}/watch?v=${url}`;
 			console.debug("URL: ", url);
-			
+
 			this.transcriptSummarizer
 				.getSummaryFromUrl(url)
 				.then((summary) => {
