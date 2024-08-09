@@ -26,16 +26,17 @@ export class TranscriptSummarizer {
 
 		const keyPointPromises = [];
 
-		const maxIndex = Math.ceil(words.length / this.settings.maxTokenSize);
+		const maxIndex = Math.ceil(
+			(words.length - 1) / this.settings.maxTokenSize
+		);
 		// Split the transcript into smaller pieces if necessary.
-		for (let i = 1; i < maxIndex; i++) {
+		for (let i = 1; i <= maxIndex; i++) {
 			const endIndex =
 				startIndex + this.settings.maxTokenSize > words.length
 					? words.length - 1
 					: startIndex + this.settings.maxTokenSize;
 			const transcriptChunk = words.slice(startIndex, endIndex).join(" ");
 			startIndex = endIndex;
-
 			keyPointPromises.push(
 				this.getKeyPointsFromTranscript(
 					`Chunk ${i}:\n\n` + transcriptChunk
