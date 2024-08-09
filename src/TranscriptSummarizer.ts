@@ -37,7 +37,6 @@ export class TranscriptSummarizer {
 					: startIndex + this.settings.maxTokenSize;
 			const transcriptChunk = words.slice(startIndex, endIndex).join(" ");
 			startIndex = endIndex;
-			new Notice(i.toString());
 			keyPointPromises.push(
 				this.getKeyPointsFromTranscript(
 					`Chunk ${i} out of ${maxIndex}:\n\n` + transcriptChunk
