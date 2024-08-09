@@ -37,9 +37,10 @@ export class TranscriptSummarizer {
 					: startIndex + this.settings.maxTokenSize;
 			const transcriptChunk = words.slice(startIndex, endIndex).join(" ");
 			startIndex = endIndex;
+			new Notice(i.toString());
 			keyPointPromises.push(
 				this.getKeyPointsFromTranscript(
-					`Chunk ${i}:\n\n` + transcriptChunk
+					`Chunk ${i} out of ${maxIndex}:\n\n` + transcriptChunk
 				)
 			);
 		}
@@ -62,7 +63,7 @@ export class TranscriptSummarizer {
 	}
 
 	constructPrompt() {
-		const prompt = `Please process the following transcript in chunks. Each chunk will be labeled with a number (e.g. Chunk 1, Chunk 2, etc.). You have been tasked with creating a concise summary of a YouTube video using its transcription to supply notes to someone learning about the topic in the video. You are to act like an expert in the subject the transcription is written about. Summarize the main points of this YouTube transcript. Ignore any introductory phrases or disclaimers.`;
+		const prompt = `You have been tasked with creating a concise summary of a YouTube video using its transcription to supply notes to someone learning about the topic in the video. You are to act like an expert in the subject the transcription is written about. Do not provide any introductory phrases or disclaimers. Please process the following transcript in chunks. Each chunk will be labeled with a number (e.g. Chunk 1 out 3, Chunk 2 out 3, etc.). Summarize this text in a single block of text, without using headings or chunk labels.`;
 		console.debug("prompt", prompt);
 		return prompt;
 	}
