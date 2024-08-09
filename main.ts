@@ -23,7 +23,7 @@ import {
 } from "settings";
 import { OllamaClient } from "src/Ollama/OllamaClient";
 
-export default class MyPlugin extends Plugin {
+export default class ChatGptOllamaYoutubeVideoSummarizer extends Plugin {
 	public settings: PluginSettings;
 
 	async onload() {
@@ -83,9 +83,9 @@ export default class MyPlugin extends Plugin {
 }
 
 class SettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+	plugin: ChatGptOllamaYoutubeVideoSummarizer;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: ChatGptOllamaYoutubeVideoSummarizer) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -219,7 +219,6 @@ class SettingTab extends PluginSettingTab {
 						);
 				})
 				.catch(() => {
-					ollamaDefaultModel.descEl.innerHTML = `Get the models from <a href="https://ollama.ai/library">Ollama library</a> or check that Ollama URL is correct.`;
 					ollamaDefaultModel.addButton((button) =>
 						button.setIcon("refresh-cw").onClick(async () => {
 							this.display();
@@ -231,7 +230,7 @@ class SettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Ollama Default Max Token Size")
 			.setDesc(
-				"Maximum number of tokens for Ollama. The default value is 4098."
+				"Maximum number of tokens for Ollama. The default value is 4096."
 			)
 			.addText((text) =>
 				text

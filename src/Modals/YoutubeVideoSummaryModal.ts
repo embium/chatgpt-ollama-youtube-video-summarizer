@@ -16,8 +16,10 @@ export class YoutubeVideoSummaryModal extends Modal {
 		this.settings = settings;
 		this.editor = editor;
 		this.openAiClient = new OpenAIClient(this.settings);
+		this.ollamaClient = new OllamaClient(this.settings);
 		this.transcriptSummarizer = new TranscriptSummarizer(
 			this.openAiClient,
+			this.ollamaClient,
 			this.settings
 		);
 	}
