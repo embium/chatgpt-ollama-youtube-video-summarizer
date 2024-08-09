@@ -38,9 +38,7 @@ export class TranscriptSummarizer {
 			const transcriptChunk = words.slice(startIndex, endIndex).join(" ");
 			startIndex = endIndex;
 			keyPointPromises.push(
-				this.getKeyPointsFromTranscript(
-					`Chunk ${i} out of ${maxIndex}:\n\n` + transcriptChunk
-				)
+				this.getKeyPointsFromTranscript(transcriptChunk)
 			);
 		}
 
@@ -50,19 +48,25 @@ export class TranscriptSummarizer {
 
 	async getKeyPointsFromTranscript(transcript: string): Promise<string> {
 		if (this.settings.provider == "OpenAI") {
-			return this.openAiClient.query(
-				this.constructPrompt() + "\nUse the text below:\n" + transcript
-			);
+			return this.openAiClient.query(this.constructPrompt() + transcript);
 		} else {
 			return this.ollamaClient.process(
-				this.constructPrompt(),
-				transcript
+				this.constructPrompt() + transcript
 			);
 		}
 	}
 
 	constructPrompt() {
-		const prompt = `You have been tasked with creating a concise summary of a YouTube video using its transcription to supply notes to someone learning about the topic in the video. You are to act like an expert in the subject the transcription is written about. Do not provide any introductory phrases or disclaimers. Please process the following transcript in chunks. Each chunk will be labeled with a number (e.g. Chunk 1 out 3, Chunk 2 out 3, etc.). Summarize this text in a single block of text, without using headings or chunk labels.`;
+		const prompt = `You are an expert summarizer of educational content, specifically tasked with creating concise notes from video transcripts. The following text is a chunk of a larger transcript from a YouTube video. It is part of an ongoing series of chunks, so treat it as a continuation of previous information without restating introductions or conclusions.
+
+Your task:
+1. Summarize the key points and concepts presented in this chunk of the transcript.
+2. Do not provide any introductory phrases, disclaimers, or concluding remarks.
+3. Focus solely on the content provided in the current chunk.
+4. Do not ask for further information or offer to facilitate discussions.
+5. Assume that this is part of a larger context, even if it seems incomplete.
+
+Please process the following transcript chunk:\n"`;
 		console.debug("prompt", prompt);
 		return prompt;
 	}

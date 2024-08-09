@@ -14,10 +14,9 @@ export class OllamaClient {
 		this.tokenSize = this.settings.maxTokenSize;
 	}
 
-	async process(system: string, prompt: string): Promise<string> {
+	async process(prompt: string): Promise<string> {
 		const requestBody = {
 			prompt: prompt,
-			system: system,
 			model: this.model,
 			options: {
 				num_ctx: this.tokenSize,
