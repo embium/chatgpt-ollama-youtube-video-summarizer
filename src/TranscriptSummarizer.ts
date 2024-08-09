@@ -3,6 +3,7 @@ import { YoutubeMetadataParser } from "./YoutubeMetadataParser/YoutubeVideoMetad
 import { PluginSettings } from "settings";
 import { OllamaClient } from "src/Ollama/OllamaClient";
 import { YoutubeTranscript } from "./YoutubeTranscript";
+import { Notice } from "obsidian";
 
 export class TranscriptSummarizer {
 	constructor(
@@ -25,8 +26,9 @@ export class TranscriptSummarizer {
 
 		const keyPointPromises = [];
 
+		const maxIndex = Math.ceil(words.length / this.settings.maxTokenSize);
 		// Split the transcript into smaller pieces if necessary.
-		while (startIndex < words.length - 1) {
+		for (let i = 1; i < maxIndex; i++) {
 			const endIndex =
 				startIndex + this.settings.maxTokenSize > words.length
 					? words.length - 1
@@ -35,13 +37,14 @@ export class TranscriptSummarizer {
 			startIndex = endIndex;
 
 			keyPointPromises.push(
-				this.getKeyPointsFromTranscript(transcriptChunk)
+				this.getKeyPointsFromTranscript(
+					`Chunk ${i}:\n\n` + transcriptChunk
+				)
 			);
 		}
 
 		const keyPoints = await Promise.all(keyPointPromises);
 		return youtubeMetadata.content + "\n" + keyPoints.join("\n\n");
-		return youtubeMetadata.content + "\n" + keyPoints;
 	}
 
 	async getKeyPointsFromTranscript(transcript: string): Promise<string> {
@@ -58,9 +61,7 @@ export class TranscriptSummarizer {
 	}
 
 	constructPrompt() {
-		const prompt = `Your output should use the following template:
-
-You have been tasked with creating a concise summary of a YouTube video using its transcription to supply notes to someone learning about the topic in the video. You are to act like an expert in the subject the transcription is written about. Do not start with an introduction, go right into the subject. I will add on additional sections of the transcript after the previous one and you will create a summary for each section.`;
+		const prompt = `Please process the following transcript in chunks. Each chunk will be labeled with a number (e.g. Chunk 1, Chunk 2, etc.). You have been tasked with creating a concise summary of a YouTube video using its transcription to supply notes to someone learning about the topic in the video. You are to act like an expert in the subject the transcription is written about. Summarize the main points of this YouTube transcript. Ignore any introductory phrases or disclaimers.`;
 		console.debug("prompt", prompt);
 		return prompt;
 	}
