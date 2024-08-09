@@ -3,7 +3,6 @@ import { YoutubeMetadataParser } from "./YoutubeMetadataParser/YoutubeVideoMetad
 import { PluginSettings } from "settings";
 import { OllamaClient } from "src/Ollama/OllamaClient";
 import { YoutubeTranscript } from "./YoutubeTranscript";
-import { Notice } from "obsidian";
 
 export class TranscriptSummarizer {
 	constructor(
@@ -21,7 +20,27 @@ export class TranscriptSummarizer {
 		const transcript = transcriptList
 			.map((transcript) => transcript.text)
 			.join(" ");
-		const keyPoints = await this.getKeyPointsFromTranscript(transcript);
+		const words = transcript.split(" ");
+		let startIndex = 0;
+
+		const keyPointPromises = [];
+
+		// Split the transcript into smaller pieces if necessary.
+		while (startIndex < words.length - 1) {
+			const endIndex =
+				startIndex + this.settings.maxTokenSize > words.length
+					? words.length - 1
+					: startIndex + this.settings.maxTokenSize;
+			const transcriptChunk = words.slice(startIndex, endIndex).join(" ");
+			startIndex = endIndex;
+
+			keyPointPromises.push(
+				this.getKeyPointsFromTranscript(transcriptChunk)
+			);
+		}
+
+		const keyPoints = await Promise.all(keyPointPromises);
+		return youtubeMetadata.content + "\n" + keyPoints.join("\n\n");
 		return youtubeMetadata.content + "\n" + keyPoints;
 	}
 
@@ -41,38 +60,7 @@ export class TranscriptSummarizer {
 	constructPrompt() {
 		const prompt = `Your output should use the following template:
 
-### Summary
-
-### Analogy
-
-### Notes
-
-- [Emoji] Bulletpoint
-
-### Keywords
-
-- Explanation
-
-
-You have been tasked with creating a concise summary of a YouTube video using its transcription to supply college student notes to use himself. You are to act like an expert in the subject the transcription is written about.
-
-
-Make a summary of the transcript. Use keywords from the transcript. Don't explain them. Keywords will be explained later.
-
-
-Additionally make a short complex analogy to give context and/or analogy from day-to-day life from the transcript.
-
-
-Create 10 bullet points (each with an appropriate emoji) that summarize the key points or important moments from the video's transcription.
-
-
-In addition to the bullet points, extract the most important keywords and any complex words not known to the average reader aswell as any acronyms mentioned. For each keyword and complex word, provide an explanation and definition based on its occurrence in the transcription.
-
-
-You are also a transcription AI and you have been provided with a text that may contain mentions of sponsorships or brand names. Your task write what you have been said to do while avoiding any mention of sponsorships or brand names.
-
-
-Please ensure that the summary, bullet points, and explanations fit within the 330-word limit, while still offering a comprehensive and clear understanding of the video's content.`;
+You have been tasked with creating a concise summary of a YouTube video using its transcription to supply notes to someone learning about the topic in the video. You are to act like an expert in the subject the transcription is written about. Do not start with an introduction, go right into the subject. I will add on additional sections of the transcript after the previous one and you will create a summary for each section.`;
 		console.debug("prompt", prompt);
 		return prompt;
 	}
