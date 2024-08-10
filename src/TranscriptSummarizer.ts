@@ -3,7 +3,6 @@ import { YoutubeMetadataParser } from "./YoutubeMetadataParser/YoutubeVideoMetad
 import { PluginSettings } from "settings";
 import { OllamaClient } from "src/Ollama/OllamaClient";
 import { YoutubeTranscript } from "./YoutubeTranscript";
-import { Notice } from "obsidian";
 
 export class TranscriptSummarizer {
 	constructor(
@@ -43,12 +42,7 @@ export class TranscriptSummarizer {
 		}
 
 		const keyPoints = await Promise.all(keyPointPromises);
-		let response = keyPoints.join("\n\n");
-		if (maxIndex > 1) {
-			response = await this.ollamaClient.process(
-				this.constructRewritePrompt() + response
-			);
-		}
+		const response = await this.rewriteSummary(keyPoints.join("\n\n"));
 		return youtubeMetadata.content + "\n" + response;
 	}
 
@@ -61,7 +55,18 @@ export class TranscriptSummarizer {
 			return this.ollamaClient.process(
 				this.constructSummarizePrompt() + transcript
 			);
-			// this.ollamaClient.process("Remove ")
+		}
+	}
+
+	async rewriteSummary(summary: string): Promise<string> {
+		if (this.settings.provider == "OpenAI") {
+			return this.openAiClient.query(
+				this.constructRewritePrompt() + summary
+			);
+		} else {
+			return this.ollamaClient.process(
+				this.constructRewritePrompt() + summary
+			);
 		}
 	}
 
@@ -72,7 +77,32 @@ export class TranscriptSummarizer {
 	}
 
 	constructRewritePrompt() {
-		const prompt = `Rewrite this summary while retaining all original information, while getting rid of redundant information. Ensure that the additional information is relevant and supports the main points of the original summary. Add definitions or explanations of technical terms as needed. Begin your rewrite now:\n`;
+		const prompt = `Your output should use the following template:
+### Summary
+
+### Paraphrase
+
+### Analogy
+
+### Notes
+
+- [Emoji] Bulletpoint
+
+You have been tasked with creating a flowing summary of information. You are to act like an expert in the subject the transcription is written about.
+
+Make a summary of the transcript. Use keywords from the transcript. Don't explain them. Keywords will be explained later.
+
+Additionally, provide a paraphrased version of the transcript. This should retain most of the original information from the transcript but present it in a more direct and concise manner. It should be longer than the summary but shorter than the original transcript.
+
+Create a short complex analogy to give context and/or analogy from day-to-day life from the transcript.
+
+Create 10 bullet points (each with an appropriate emoji) that summarize the key points or important moments from the video's transcript that's relevant to the paraphrase.
+
+In addition to the bullet points, extract the most important keywords and any complex words not known to the average reader as well as any acronyms mentioned. For each keyword and complex word, provide definitions based on its occurrence in the transcription.
+
+You are also a transcription AI and you have been provided with a text that may contain mentions of sponsorships or brand names. Your task is to write what you have been said to do while avoiding any mention of sponsorships or brand names.
+
+Begin your rewrite now:\n`;
 		return prompt;
 	}
 }

@@ -1,51 +1,89 @@
 import { requestUrl } from "obsidian";
 
 const RE_YOUTUBE =
-	/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i;
+	/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+const USER_AGENT =
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36,gzip(gfe)";
 const RE_XML_TRANSCRIPT =
 	/<text start="([^"]*)" dur="([^"]*)">([^<]*)<\/text>/g;
-class YoutubeTranscriptError extends Error {
-	constructor(message: string) {
+
+export class YoutubeTranscriptError extends Error {
+	constructor(message) {
 		super(`[YoutubeTranscript] 🚨 ${message}`);
 	}
 }
-class YoutubeTranscriptTooManyRequestError extends YoutubeTranscriptError {
+
+export class YoutubeTranscriptTooManyRequestError extends YoutubeTranscriptError {
 	constructor() {
 		super(
 			"YouTube is receiving too many requests from this IP and now requires solving a captcha to continue"
 		);
 	}
 }
-class YoutubeTranscriptVideoUnavailableError extends YoutubeTranscriptError {
+
+export class YoutubeTranscriptVideoUnavailableError extends YoutubeTranscriptError {
 	constructor(videoId: string) {
 		super(`The video is no longer available (${videoId})`);
 	}
 }
-class YoutubeTranscriptDisabledError extends YoutubeTranscriptError {
+
+export class YoutubeTranscriptDisabledError extends YoutubeTranscriptError {
 	constructor(videoId: string) {
 		super(`Transcript is disabled on this video (${videoId})`);
 	}
 }
-class YoutubeTranscriptNotAvailableError extends YoutubeTranscriptError {
+
+export class YoutubeTranscriptNotAvailableError extends YoutubeTranscriptError {
 	constructor(videoId: string) {
 		super(`No transcripts are available for this video (${videoId})`);
 	}
 }
 
+export class YoutubeTranscriptNotAvailableLanguageError extends YoutubeTranscriptError {
+	constructor(lang: string, availableLangs: string[], videoId: string) {
+		super(
+			`No transcripts are available in ${lang} this video (${videoId}). Available languages: ${availableLangs.join(
+				", "
+			)}`
+		);
+	}
+}
+
+export interface TranscriptConfig {
+	lang?: string;
+}
+export interface TranscriptResponse {
+	text: string;
+	duration: number;
+	offset: number;
+	lang?: string;
+}
+
+/**
+ * Class to retrieve transcript if exist
+ */
 export class YoutubeTranscript {
 	/**
 	 * Fetch transcript from YTB Video
 	 * @param videoId Video url or video identifier
 	 * @param config Get transcript in a specific language ISO
 	 */
-	static async fetchTranscript(videoId: string) {
-		let _a;
+	public static async fetchTranscript(
+		videoId: string
+	): Promise<TranscriptResponse[]> {
 		const identifier = this.retrieveVideoId(videoId);
-		const videoPageResponse = await requestUrl(
-			`https://www.youtube.com/watch?v=${identifier}`
-		);
-		const videoPageBody = videoPageResponse.text;
+		const lang = "en";
+		const videoPageResponse = await requestUrl({
+			url: `https://www.youtube.com/watch?v=${identifier}`,
+			headers: {
+				"Accept-Language": lang,
+				"User-Agent": USER_AGENT,
+			},
+		});
+		const videoPageBody = await videoPageResponse.text;
+
 		const splittedHTML = videoPageBody.split('"captions":');
+
 		if (splittedHTML.length <= 1) {
 			if (videoPageBody.includes('class="g-recaptcha"')) {
 				throw new YoutubeTranscriptTooManyRequestError();
@@ -55,46 +93,63 @@ export class YoutubeTranscript {
 			}
 			throw new YoutubeTranscriptDisabledError(videoId);
 		}
-		const captions =
-			(_a = (() => {
-				try {
-					return JSON.parse(
-						splittedHTML[1]
-							.split(',"videoDetails')[0]
-							.replace("\n", "")
-					);
-				} catch (e) {
-					return undefined;
-				}
-			})()) === null || _a === void 0
-				? void 0
-				: _a["playerCaptionsTracklistRenderer"];
+
+		const captions = (() => {
+			try {
+				return JSON.parse(
+					splittedHTML[1].split(',"videoDetails')[0].replace("\n", "")
+				);
+			} catch (e) {
+				return undefined;
+			}
+		})()?.["playerCaptionsTracklistRenderer"];
+
 		if (!captions) {
 			throw new YoutubeTranscriptDisabledError(videoId);
 		}
+
 		if (!("captionTracks" in captions)) {
 			throw new YoutubeTranscriptNotAvailableError(videoId);
 		}
-		const transcriptURL = captions.captionTracks[0].baseUrl;
-		const transcriptResponse = await requestUrl(transcriptURL);
-		if (!transcriptResponse.text) {
+
+		if (
+			!captions.captionTracks.some((track) => track.languageCode === lang)
+		) {
+			throw new YoutubeTranscriptNotAvailableLanguageError(
+				lang,
+				captions.captionTracks.map((track) => track.languageCode),
+				videoId
+			);
+		}
+
+		const transcriptURL = captions.captionTracks.find(
+			(track) => track.languageCode === lang
+		).baseUrl;
+
+		const transcriptResponse = await fetch(transcriptURL, {
+			headers: {
+				"Accept-Language": lang,
+				"User-Agent": USER_AGENT,
+			},
+		});
+		if (!transcriptResponse.ok) {
 			throw new YoutubeTranscriptNotAvailableError(videoId);
 		}
-		const transcriptBody = await transcriptResponse.text;
+		const transcriptBody = await transcriptResponse.text();
 		const results = [...transcriptBody.matchAll(RE_XML_TRANSCRIPT)];
-		return results.map((result) => {
-			return {
-				text: result[3],
-				duration: parseFloat(result[2]),
-				offset: parseFloat(result[1]),
-			};
-		});
+		return results.map((result) => ({
+			text: result[3],
+			duration: parseFloat(result[2]),
+			offset: parseFloat(result[1]),
+			lang: lang ?? captions.captionTracks[0].languageCode,
+		}));
 	}
+
 	/**
 	 * Retrieve video id from url or string
 	 * @param videoId video url or video id
 	 */
-	static retrieveVideoId(videoId: string) {
+	private static retrieveVideoId(videoId: string) {
 		if (videoId.length === 11) {
 			return videoId;
 		}
