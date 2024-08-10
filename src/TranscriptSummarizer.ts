@@ -90,7 +90,9 @@ export class TranscriptSummarizer {
 
 You have been tasked with creating a flowing summary of information. You are to act like an expert in the subject the transcription is written about.
 
-Rewrite the original transcript to make it more fluent and readable and place it in the transcript, you could even make it more interesting. Do not use or mention the name of the speaker, professor, or instructor in your output. Refer to them using general terms like "the speaker" or "the instructor" instead.
+Rewrite the original transcript to make it more fluent then place it in the transcript.
+
+Do not use or mention the name of the speaker, professor, or instructor in your output. Refer to them using general terms like "the speaker" or "the instructor" instead.
 
 Create a short complex analogy to give context and/or analogy from day-to-day life from the transcript.
 
