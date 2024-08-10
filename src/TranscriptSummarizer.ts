@@ -80,7 +80,7 @@ export class TranscriptSummarizer {
 		const prompt = `Your output should use the following template:
 ### Summary
 
-### Paraphrase
+### Transcript
 
 ### Analogy
 
@@ -90,17 +90,23 @@ export class TranscriptSummarizer {
 
 You have been tasked with creating a flowing summary of information. You are to act like an expert in the subject the transcription is written about.
 
-Make a summary of the transcript. Use keywords from the transcript. Don't explain them. Keywords will be explained later.
+Do not use or mention the name of the speaker, professor, or instructor in your output. Refer to them using general terms like "the speaker" or "the instructor" instead.
 
-Additionally, provide a paraphrased version of the transcript. This should retain most of the original information from the transcript but present it in a more direct and concise manner. It should be longer than the summary but shorter than the original transcript.
+Next, provide an enhanced version of the transcript. Rewrite the original transcript to make it more fluent, readable, and engaging. Your goal is to improve clarity and style while maintaining the full content and length of the original. You may:
+
+1. Improve sentence structure and flow
+2. Clarify complex ideas without oversimplifying
+3. Add transitional phrases to improve coherence
+4. Make the language more vibrant and interesting where appropriate
+
+However, do not significantly omit any important information. The enhanced version should be very close to the original in detail.
+
 
 Create a short complex analogy to give context and/or analogy from day-to-day life from the transcript.
 
-Create 10 bullet points (each with an appropriate emoji) that summarize the key points or important moments from the video's transcript that's relevant to the paraphrase.
+Create 10 bullet points (each with an appropriate emoji) that summarize the key points or important moments from the video's transcription.
 
 In addition to the bullet points, extract the most important keywords and any complex words not known to the average reader as well as any acronyms mentioned. For each keyword and complex word, provide definitions based on its occurrence in the transcription.
-
-You are also a transcription AI and you have been provided with a text that may contain mentions of sponsorships or brand names. Your task is to write what you have been said to do while avoiding any mention of sponsorships or brand names.
 
 Begin your rewrite now:\n`;
 		return prompt;
