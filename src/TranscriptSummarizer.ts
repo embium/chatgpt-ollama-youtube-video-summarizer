@@ -43,31 +43,36 @@ export class TranscriptSummarizer {
 		}
 
 		const keyPoints = await Promise.all(keyPointPromises);
-		return youtubeMetadata.content + "\n" + keyPoints.join("\n\n");
+		let response = keyPoints.join("\n\n");
+		if (maxIndex > 1) {
+			response = await this.ollamaClient.process(
+				this.constructRewritePrompt() + response
+			);
+		}
+		return youtubeMetadata.content + "\n" + response;
 	}
 
 	async getKeyPointsFromTranscript(transcript: string): Promise<string> {
 		if (this.settings.provider == "OpenAI") {
-			return this.openAiClient.query(this.constructPrompt() + transcript);
+			return this.openAiClient.query(
+				this.constructSummarizePrompt() + transcript
+			);
 		} else {
 			return this.ollamaClient.process(
-				this.constructPrompt() + transcript
+				this.constructSummarizePrompt() + transcript
 			);
+			// this.ollamaClient.process("Remove ")
 		}
 	}
 
-	constructPrompt() {
-		const prompt = `You are an expert summarizer of educational content, specifically tasked with creating concise notes from video transcripts. The following text is a chunk of a larger transcript from a YouTube video. It is part of an ongoing series of chunks, so treat it as a continuation of previous information without restating introductions or conclusions.
-
-Your task:
-1. Summarize the key points and concepts presented in this chunk of the transcript.
-2. Do not provide any introductory phrases, disclaimers, or concluding remarks.
-3. Focus solely on the content provided in the current chunk.
-4. Do not ask for further information or offer to facilitate discussions.
-5. Assume that this is part of a larger context, even if it seems incomplete.
-
-Please process the following transcript chunk:\n"`;
+	constructSummarizePrompt() {
+		const prompt = `You are a specialized content summarizer. Your task is to create a flowing summary of information chunks, treating every chunk as if it's from the middle of a continuous explanation. Begin your summary now:\n`;
 		console.debug("prompt", prompt);
+		return prompt;
+	}
+
+	constructRewritePrompt() {
+		const prompt = `Rewrite this summary while retaining all original information, while getting rid of redundant information. Ensure that the additional information is relevant and supports the main points of the original summary. Add definitions or explanations of technical terms as needed. Begin your rewrite now:\n`;
 		return prompt;
 	}
 }
