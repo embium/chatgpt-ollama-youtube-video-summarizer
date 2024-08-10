@@ -90,17 +90,7 @@ export class TranscriptSummarizer {
 
 You have been tasked with creating a flowing summary of information. You are to act like an expert in the subject the transcription is written about.
 
-Do not use or mention the name of the speaker, professor, or instructor in your output. Refer to them using general terms like "the speaker" or "the instructor" instead.
-
-Next, provide an enhanced version of the transcript. Rewrite the original transcript to make it more fluent, readable, and engaging. Your goal is to improve clarity and style while maintaining the full content and length of the original. You may:
-
-1. Improve sentence structure and flow
-2. Clarify complex ideas without oversimplifying
-3. Add transitional phrases to improve coherence
-4. Make the language more vibrant and interesting where appropriate
-
-However, do not significantly omit any important information. The enhanced version should be very close to the original in detail.
-
+Rewrite the original transcript to make it more fluent and readable and place it in the transcript, you could even make it more interesting. Do not use or mention the name of the speaker, professor, or instructor in your output. Refer to them using general terms like "the speaker" or "the instructor" instead.
 
 Create a short complex analogy to give context and/or analogy from day-to-day life from the transcript.
 
