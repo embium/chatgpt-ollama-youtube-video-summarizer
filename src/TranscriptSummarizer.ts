@@ -67,27 +67,27 @@ export class TranscriptSummarizer {
 	constructSummarizePrompt() {
 		const prompt = `As an expert in this transcript's subject matter, provide:
 
-### Summary
+## Summary
 
 - Based on the combined transcript, write a concise summary that captures the main points and purpose of the video. Keep it under 150 words.
 
-### Transcript
+## Enhanced Transcript
 
 - Maintain an objective tone and refer to the speaker as "the speaker" throughout your response.
 - Enhance the combined transcript by adding clarifications, examples, or additional explanations where necessary.
 - Ensure the enhancements add value and make the content more accessible to the audience.
 - Begin each section directly with the content. Do not include any introductory phrases such as "Here's a rewritten transcript..." or "In this section...". Start immediately with the relevant information.
-- Identify any math expressions, formulas and equations with $ or $$. Be consistent and err on the side of formatting potential math.
+- Identify and wrap any math expressions, formulas and equations with $ or $$. Be consistent and err on the side of formatting potential math.
 
-### Key Concepts
+## Key Concepts
 
 - Extract the key points from the following transcript. List them in bullet points and ensure each point is clear and concise. 
 
-### Analogies
+## Analogies
 
 - Identify the central points in the transcript and create analogies that simplify these concepts for a broader audience. Ensure the analogies are relatable and easy to understand. 
 
-### Notes
+## Notes
 
 - Create 10 bullet points, each with an appropriate emoji, summarizing key moments or important points from the transcript.
 
