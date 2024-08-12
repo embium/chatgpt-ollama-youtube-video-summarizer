@@ -1,7 +1,7 @@
+import { PluginSettings } from "settings";
+import { OllamaClient } from "./Ollama/OllamaClient";
 import { OpenAIClient } from "./OpenAi/OpenAiClient";
 import { YoutubeMetadataParser } from "./YoutubeMetadataParser/YoutubeVideoMetadataParser";
-import { PluginSettings } from "settings";
-import { OllamaClient } from "src/Ollama/OllamaClient";
 import { YoutubeTranscript } from "./YoutubeTranscript";
 
 export class TranscriptSummarizer {
@@ -21,32 +21,33 @@ export class TranscriptSummarizer {
 			.map((transcript) => transcript.text)
 			.join(" ");
 		const words = transcript.split(" ");
-		let startIndex = 0;
 
 		const keyPointPromises = [];
+		const maxTokenSize = this.settings.maxTokenSize ?? 4096;
 
-		const maxIndex = Math.ceil(
-			(words.length - 1) / this.settings.maxTokenSize
-		);
-		// Split the transcript into smaller pieces if necessary.
-		for (let i = 1; i <= maxIndex; i++) {
-			const endIndex =
-				startIndex + this.settings.maxTokenSize > words.length
-					? words.length - 1
-					: startIndex + this.settings.maxTokenSize;
-			const transcriptChunk = words.slice(startIndex, endIndex).join(" ");
-			startIndex = endIndex;
-			keyPointPromises.push(
-				this.getKeyPointsFromTranscript(transcriptChunk)
-			);
+		for (let i = 0; i < words.length; i += maxTokenSize) {
+			const transcriptChunk = words.slice(i, i + maxTokenSize).join(" ");
+			keyPointPromises.push(this.rewriteTranscript(transcriptChunk));
 		}
 
 		const keyPoints = await Promise.all(keyPointPromises);
-		const response = await this.rewriteSummary(keyPoints.join("\n\n"));
+		const response = await this.summarize(keyPoints.join("\n\n"));
 		return youtubeMetadata.content + "\n" + response;
 	}
 
-	async getKeyPointsFromTranscript(transcript: string): Promise<string> {
+	async rewriteTranscript(transcript: string): Promise<string> {
+		if (this.settings.provider == "OpenAI") {
+			return this.openAiClient.query(
+				this.constructRewritePrompt() + transcript
+			);
+		} else {
+			return this.ollamaClient.process(
+				this.constructRewritePrompt() + transcript
+			);
+		}
+	}
+
+	async summarize(transcript: string): Promise<string> {
 		if (this.settings.provider == "OpenAI") {
 			return this.openAiClient.query(
 				this.constructSummarizePrompt() + transcript
@@ -56,51 +57,41 @@ export class TranscriptSummarizer {
 				this.constructSummarizePrompt() + transcript
 			);
 		}
-	}
-
-	async rewriteSummary(summary: string): Promise<string> {
-		if (this.settings.provider == "OpenAI") {
-			return this.openAiClient.query(
-				this.constructRewritePrompt() + summary
-			);
-		} else {
-			return this.ollamaClient.process(
-				this.constructRewritePrompt() + summary
-			);
-		}
-	}
-
-	constructSummarizePrompt() {
-		const prompt = `You are a specialized content summarizer. Your task is to create a flowing summary of information chunks, treating every chunk as if it's from the middle of a continuous explanation. Begin your summary now:\n`;
-		console.debug("prompt", prompt);
-		return prompt;
 	}
 
 	constructRewritePrompt() {
-		const prompt = `Your output should use the following template:
+		const prompt = `You will be given a portion of a YouTube transcript. Your task is to rewrite it for clarity and conciseness while preserving the original meaning. Ensure that the language is smooth and natural, and maintain the speaker's intended message. A chunk of the transcipt begins now:\n`;
+		return prompt;
+	}
+
+	constructSummarizePrompt() {
+		const prompt = `As an expert in this transcript's subject matter, provide:
+
 ### Summary
+
+- Based on the combined transcript, write a concise summary that captures the main points and purpose of the video. Keep it under 150 words.
 
 ### Transcript
 
-### Analogy
+- Maintain an objective tone and refer to the speaker as "the speaker" throughout your response.
+- Enhance the combined transcript by adding clarifications, examples, or additional explanations where necessary.
+- Ensure the enhancements add value and make the content more accessible to the audience.
+- Begin each section directly with the content. Do not include any introductory phrases such as "Here's a rewritten transcript..." or "In this section...". Start immediately with the relevant information.
+- Identify any math expressions, formulas and equations with $ or $$. Be consistent and err on the side of formatting potential math.
+
+### Key Concepts
+
+- Extract the key points from the following transcript. List them in bullet points and ensure each point is clear and concise. 
+
+### Analogies
+
+- Identify the central points in the transcript and create analogies that simplify these concepts for a broader audience. Ensure the analogies are relatable and easy to understand. 
 
 ### Notes
 
-- [Emoji] Bulletpoint
+- Create 10 bullet points, each with an appropriate emoji, summarizing key moments or important points from the transcript.
 
-You have been tasked with creating a flowing summary of information. You are to act like an expert in the subject the transcription is written about.
-
-Rewrite the original transcript to make it more fluent then place it in the transcript.
-
-Do not use or mention the name of the speaker, professor, or instructor in your output. Refer to them using general terms like "the speaker" or "the instructor" instead.
-
-Create a short complex analogy to give context and/or analogy from day-to-day life from the transcript.
-
-Create 10 bullet points (each with an appropriate emoji) that summarize the key points or important moments from the video's transcription.
-
-In addition to the bullet points, extract the most important keywords and any complex words not known to the average reader as well as any acronyms mentioned. For each keyword and complex word, provide definitions based on its occurrence in the transcription.
-
-Begin your rewrite now:\n`;
+Here are several rewritten segments of a YouTube transcript. Your task is to combine them into a single, coherent document. Ensure the flow between segments is smooth, and the narrative remains clear and engaging. Here are the segments:\n`;
 		return prompt;
 	}
 }
