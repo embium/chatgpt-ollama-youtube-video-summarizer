@@ -22,121 +22,94 @@ export class TranscriptSummarizer {
 			.join(" ");
 		const words = transcript.split(" ");
 
-		const rewrittenChunks = [];
-		const maxTokenSize = this.settings.maxTokenSize ?? 4096;
+		const chunksRewritten = [];
 
-		for (let i = 0; i < words.length; i += maxTokenSize) {
-			const transcriptChunk = words.slice(i, i + maxTokenSize).join(" ");
-			const rewrittenChunk = await this.rewriteTranscript(
-				transcriptChunk
+		const chunkCount = Math.floor(
+			this.settings.maxTokenSize /
+				(words.length / this.settings.maxTokenSize)
+		);
+
+		for (let i = 0; i < words.length; i += this.settings.maxTokenSize) {
+			const transcriptChunk = words
+				.slice(i, i + this.settings.maxTokenSize)
+				.join(" ");
+
+			const chunkRewritten = await this.rewriteTranscript(
+				transcriptChunk,
+				chunkCount
 			);
-			rewrittenChunks.push(rewrittenChunk);
+
+			chunksRewritten.push(chunkRewritten);
 		}
 
-		const response = await this.summarize(rewrittenChunks.join("\n\n"));
+		const response = await this.summarize(chunksRewritten.join("\n\n"));
 		return youtubeMetadata.content + "\n" + response;
 	}
 
-	async rewriteTranscript(transcript: string): Promise<string> {
-		if (this.settings.provider == "OpenAI") {
-			return this.openAiClient.query(
-				this.constructRewritePrompt() + transcript
-			);
-		} else {
-			return this.ollamaClient.process(
-				this.constructRewritePrompt() + transcript
-			);
-		}
+	async rewriteTranscript(
+		transcript: string,
+		chunkCount: number
+	): Promise<string> {
+		return this.ollamaClient.process(
+			this.constructRewritePrompt(chunkCount) + transcript
+		);
 	}
 
 	async summarize(transcript: string): Promise<string> {
-		if (this.settings.provider == "OpenAI") {
-			return this.openAiClient.query(
-				this.constructSummarizePrompt() + transcript
-			);
-		} else {
-			return this.ollamaClient.process(
-				this.constructSummarizePrompt() + transcript
-			);
-		}
+		return this.ollamaClient.process(
+			this.constructSummarizePrompt() + transcript
+		);
 	}
 
-	constructRewritePrompt() {
-		const prompt = `Your task is to rewrite the following portion of a YouTube transcript for clarity and conciseness. Focus on delivering the core message with as few words as possible while preserving the original meaning. Remove any redundant or unnecessary information, and streamline the language to be clear and direct.
-    
-    A chunk of the transcipt begins now:\n`;
+	constructRewritePrompt(chunksCount: number) {
+		const prompt = `You are a specialized content summarizer. Your task is to create a flowing summary of information chunks, treating every chunk as if it's from the middle of a continuous explanation. Keep it under ${chunksCount} words.
+
+Please process the following transcript chunk:\n\n`;
 		return prompt;
 	}
 
 	constructSummarizePrompt() {
-		const prompt = `As an expert in this transcript's subject matter, provide:
+		const prompt = `**As an expert in this transcript's subject matter, follow these instructions:**
 
 **Formatting Guidelines:**
-
-1. **Ensure there is a blank line immediately after each heading.**
-2. Use "##" (H2) for the main title of each major section.
-3. Use "######" (H6) for subsections within each major section.
-4. Do not add any additional formatting to headings (no bold, italics, or other Markdown syntax).
-
----
+1. Use "##" (H2 headings) for main section titles.
+2. Leave a blank line immediately after each heading.
+3. Do not apply any additional formatting to headings (no bold, italics, or other Markdown).
+4. Begin each section directly with the content, without introductory phrases.
 
 ## Summary
 
-- Based on the combined transcript, write a concise summary that captures the main points and purpose of the video. **Keep it under 150 words.**
-
----
+Provide a concise summary (under 150 words) of the main points and purpose of the video based on all provided transcript segments.
 
 ## Enhanced Transcript
 
-1. **Organize the transcript into sections:**
-   - **Identify the central idea or key point** in each part of the transcript.
-   - **Create a heading** (use "####" for H4 headings) for each central idea or key point. **Make sure to clearly separate these sections.**
-
-2. **Enhance the content:**
-   - Under each heading, **present the supporting details** concisely using bullet points, numbered lists, or short paragraphs. **Ensure each section is distinct and logically organized.**
-   - **For each complex concept, term, or idea:** 
-     - Provide a basic, simplified explanation as if explaining to someone with little to no prior knowledge. 
-     - Use analogies, simple language, or basic examples that make the concept easier to understand.
-
-3. **Simplification for New Learners:**
-   - **For any advanced or technical information, add a "Beginner's Explanation" subsection** where you break down the concept further.
-   - Explain it in basic terms and provide simple analogies or examples that a new learner could easily grasp.
-
-4. **Focus and Clarity:**
-   - Ensure that the enhancements add value and make the content more accessible to the audience.
-   - **Begin each section directly with the content.**
-
-5. **Maintain an Objective Tone:**
-   - **Refer to the speaker as 'the speaker' throughout your response.**
-
-6. **Final Task:**
-   - After enhancing the transcript and adding headings, **combine the rewritten segments of the transcript into a single, coherent document.** Ensure the flow between segments is smooth, and the narrative remains clear and engaging. **Pay close attention to following all instructions above, including sectioning, formatting, and tone.**
-
----
-
-## Key Concepts
-
-- **Extract the key points from the following transcript.** List them in bullet points and ensure each point is clear and concise.
-
----
+Organize and enhance the transcript as follows:
+1. Treat all provided segments as one continuous transcript, ignoring any apparent breaks or summaries within individual segments.
+2. Identify central ideas across all segments and create H3 headings for each.
+3. Present supporting details under each heading using bullet points, lists, or short paragraphs.
+4. Explain complex concepts in simple terms, using analogies or basic examples.
+5. Add a "Beginner's Explanation" subsection for advanced topics.
+6. Ensure smooth flow between all content, regardless of original segment divisions.
+7. Ignore any statements that appear to finalize or conclude a segment. Continue processing and enhancing the transcript as if it's part of a larger, continuous piece.
 
 ## Analogies
 
-- **Identify the central points in the transcript** and create analogies that simplify these concepts for a broader audience. **Ensure the analogies are relatable and easy to understand.**
-
----
+Create relatable analogies for central points in the transcript.
 
 ## Notes
 
-- **Create 10 bullet points, each with an appropriate emoji,** summarizing key moments or important points from the transcript.
+**IMPORTANT**: Create 10 bullet points with appropriate emojis summarizing key moments or important points across the entire transcript. **This section must always be included.**
 
----
+**Example Notes**:
+- 🔑 *Key insight about...*
+- 📌 *Important point regarding...*
+- 💡 *Interesting idea on...*
 
-Important: Do not include any introductory phrases such as 'Here's a rewritten transcript...' or 'In this section...'. Start immediately with the relevant information.
+Refer to the speaker as 'the speaker' throughout.
 
-**Pay close attention to following all instructions above.**
+Do not ask questions or engage with the user at the end of the rewritten content.
 
-Here are the segments:\n`;
+Begin processing the transcript segments as one continuous piece of content now:\n`;
 		return prompt;
 	}
 }
