@@ -75,7 +75,7 @@ export class TranscriptSummarizer {
 
 1. **Ensure there is a blank line immediately after each heading.**
 2. Use "##" (H2) for the main title of each major section.
-3. Use "####" (H4) for subsections within each major section.
+3. Use "######" (H6) for subsections within each major section.
 4. Do not add any additional formatting to headings (no bold, italics, or other Markdown syntax).
 
 ---
