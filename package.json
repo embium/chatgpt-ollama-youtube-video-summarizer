@@ -6,8 +6,7 @@
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json",
-		"test": "node test --require babel-core/register"
+		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
 	"keywords": [],
 	"author": "",
@@ -16,7 +15,6 @@
 		"@types/node": "^16.18.105",
 		"@typescript-eslint/eslint-plugin": "5.29.0",
 		"@typescript-eslint/parser": "5.29.0",
-		"babel-core": "^6.26.3",
 		"babel-preset-es2018": "^1.0.0",
 		"builtin-modules": "3.3.0",
 		"esbuild": "0.17.3",
