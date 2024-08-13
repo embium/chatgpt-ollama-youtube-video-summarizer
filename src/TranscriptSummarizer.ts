@@ -42,7 +42,10 @@ export class TranscriptSummarizer {
 			chunksRewritten.push(chunkRewritten);
 		}
 
-		const response = await this.summarize(chunksRewritten.join("\n\n"));
+		const response = await this.summarize(
+			chunksRewritten.join("\n\n"),
+			this.settings.maxTokenSize
+		);
 		return youtubeMetadata.content + "\n" + response;
 	}
 
@@ -55,9 +58,9 @@ export class TranscriptSummarizer {
 		);
 	}
 
-	async summarize(transcript: string): Promise<string> {
+	async summarize(transcript: string, maxTokenSize: number): Promise<string> {
 		return this.ollamaClient.process(
-			this.constructSummarizePrompt() + transcript
+			this.constructSummarizePrompt(maxTokenSize) + transcript
 		);
 	}
 
@@ -68,8 +71,8 @@ Please process the following transcript chunk:\n\n`;
 		return prompt;
 	}
 
-	constructSummarizePrompt() {
-		const prompt = `**As an expert in this transcript's subject matter, follow these instructions:**
+	constructSummarizePrompt(maxTokenSize: number) {
+		const prompt = `**As an expert in this transcript's subject matter, follow these instructions and keep it under ${maxTokenSize}:**
 
 **Formatting Guidelines:**
 1. Use "##" (H2 headings) for main section titles.
