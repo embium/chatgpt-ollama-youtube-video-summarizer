@@ -72,45 +72,56 @@ Please process the following transcript chunk:\n\n`;
 	}
 
 	constructSummarizePrompt(maxTokenSize: number) {
-		const prompt = `**As an expert in this transcript's subject matter, follow these instructions and keep it under ${maxTokenSize}:**
+		const prompt = `As an expert in this transcript's subject matter, follow these instructions:
 
-**Formatting Guidelines:**
-1. Use "##" (H2 headings) for main section titles.
-2. Leave a blank line immediately after each heading.
-3. Do not apply any additional formatting to headings (no bold, italics, or other Markdown).
-4. Begin each section directly with the content, without introductory phrases.
+General Guidelines:
+
+1. Begin each section directly with content.
+2. Refer to the speaker as "the speaker" throughout.
+3. Do not ask questions or engage with the user at the end.
+4. Keep the response under ${maxTokenSize} words.
+
+Formating Guidelines:
+
+1. Use "##" for main section titles.
+2. Use "###" for sub-section titles.
+3. Leave a blank line after each title.
+4. No additional formatting for headings.
 
 ## Summary
 
-Provide a concise summary (under 150 words) of the main points and purpose of the video based on all provided transcript segments.
+Write a concise summary (under 150 words) of the video's main points.
+
+---
 
 ## Enhanced Transcript
 
 Organize and enhance the transcript as follows:
-1. Treat all provided segments as one continuous transcript, ignoring any apparent breaks or summaries within individual segments.
-2. Identify central ideas across all segments and create H3 headings for each.
-3. Present supporting details under each heading using bullet points, lists, or short paragraphs.
-4. Explain complex concepts in simple terms, using analogies or basic examples.
-5. Add a "Beginner's Explanation" subsection for advanced topics.
-6. Ensure smooth flow between all content, regardless of original segment divisions.
-7. Ignore any statements that appear to finalize or conclude a segment. Continue processing and enhancing the transcript as if it's part of a larger, continuous piece.
+
+1. Identify central ideas across all segments.
+2. Present supporting details under each heading using bullet points, lists, or short paragraphs.
+3. Explain complex concepts in simple terms, using analogies or basic examples.
+4. Add a "Beginner's Explanation" subsection for advanced topics.
+5. Ensure smooth flow between all content, regardless of original segment divisions.
+6. Ignore any statements that appear to finalize or conclude a segment. Continue processing and enhancing the transcript as if it's part of a larger, continuous piece.
+
+---
 
 ## Analogies
 
-Create relatable analogies for central points in the transcript.
+- Create relatable analogies for central points in the transcript.
+
+---
+
+## Real World Examples
+
+- Provide examples of real-world applications of the key points in the transcript.
+
+---
 
 ## Notes
 
-**IMPORTANT**: Create 10 bullet points with appropriate emojis summarizing key moments or important points across the entire transcript. **This section must always be included.**
-
-**Example Notes**:
-- 🔑 *Key insight about...*
-- 📌 *Important point regarding...*
-- 💡 *Interesting idea on...*
-
-Refer to the speaker as 'the speaker' throughout.
-
-Do not ask questions or engage with the user at the end of the rewritten content.
+- Create 10 bullet points with appropriate emojis, summarizing key moments or important points in the transcript.
 
 Begin processing the transcript segments as one continuous piece of content now:\n`;
 		return prompt;
