@@ -88,6 +88,8 @@ Formating Guidelines:
 3. Leave a blank line after each title.
 4. No additional formatting for headings.
 
+---
+
 ## Summary
 
 Write a concise summary (under 150 words) of the video's main points.
@@ -104,24 +106,50 @@ Organize and enhance the transcript as follows:
 4. Add a "Beginner's Explanation" subsection for advanced topics.
 5. Ensure smooth flow between all content, regardless of original segment divisions.
 6. Ignore any statements that appear to finalize or conclude a segment. Continue processing and enhancing the transcript as if it's part of a larger, continuous piece.
+7. For each concept or term that isn't common knowledge, provide a "Beginner's Explanation" subsection. This should include:
+   a. A simple definition in everyday language
+   b. A basic analogy or metaphor to help visualize the concept
+   c. An example of how this concept might be observed in daily life
+8. Assume the reader has no prior knowledge of AI, machine learning, or advanced computer science concepts. Explain everything as if speaking to a high school student with no specialized knowledge.
+9. If any technical terms are used, immediately follow them with a parenthetical explanation or footnote.
+
+---
+
+## Glossary
+
+Create a glossary of key terms used in the transcript.
+
+### Definitions
+
+Provide a simple, jargon-free definition
+
+### Basic Examples
+
+Give an everyday example of how this concept might be observed or applied
+
+### Relation to Main Topic
+
+If applicable, explain how this term relates to the main topic of the video
 
 ---
 
 ## Analogies
 
-- Create relatable analogies for central points in the transcript.
+Create relatable analogies for central points in the transcript.
 
 ---
 
 ## Real World Examples
 
-- Provide examples of real-world applications of the key points in the transcript.
+Provide examples of real-world applications of the key points in the transcript.
 
 ---
 
 ## Notes
 
-- Create 10 bullet points with appropriate emojis, summarizing key moments or important points in the transcript.
+Create 10 bullet points with appropriate emojis, summarizing key moments or important points in the transcript.
+
+---
 
 Begin processing the transcript segments as one continuous piece of content now:\n`;
 		return prompt;
