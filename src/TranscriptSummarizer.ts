@@ -4,44 +4,54 @@ import { OpenAIClient } from "./OpenAi/OpenAiClient";
 import { YoutubeMetadataParser } from "./YoutubeMetadataParser/YoutubeVideoMetadataParser";
 import { YoutubeTranscript } from "./YoutubeTranscript";
 
-const STEP_1_PROMPT = `Follow these instructions:
-- Rewrite the transcript, significantly shortening each section while retaining all topics, subtopics, and key points.
-- Begin directly with content.
-- Do not ask questions or engage with the user at the end.
-- Output the entire rewrite as a single, continuous paragraph without any headers, section breaks, or special formatting.
-- Use exactly 100 words total.
-- Leave out any names, titles, or other information that might not be relevant.
-- Exclude any introductory or concluding sections or statements. Focus only on the main content and key points of each section.
-- Ensure smooth flow between all content, regardless of original segment divisions.
-- Retaine specific examples, stories, or case studies that illustrate main points, even if in abbreviated form.
-- Combine all content into a single, cohesive paragraph without any line breaks or section divisions.
+const STEP_1_PROMPT = `Follow these instructions to rewrite a chunk of a YouTube video transcript:
+- You may use up to 100 words. Do not exceed this limit under any circumstances.
+- Begin the transcript processing immediately without any introductory text.
+- Output the entire rewrite as a single, continuous paragraph without headers, breaks, or special formatting.
+- Focus solely on the main content and key points, excluding introductions, conclusions, and irrelevant information such as names or titles.
+- Ensure smooth flow between all content, disregarding original segment divisions.
+- Retain specific examples, stories, or case studies that illustrate main points, even if abbreviated.
+- Significantly shorten each section while preserving all topics, subtopics, and key points.
+- If the provided transcript is too short (less than 10 words) or incomplete, stop processing immediately.
 
 Begin processing the transcript now:\n`;
 
-const STEP_2_PROMPT = `Prompt for Processing YouTube Video Transcripts:
+const STEP_2_PROMPT = `As an expert in the subject matter of this transcript, please follow these instructions:
 
-1. Analyze the entire video transcript thoroughly. 
+1. Analyze the entire video transcript thoroughly, ensuring close adherence to its content and structure.
 
 2. Create a hierarchical structure:
    - Structure content into main sections (I, II, III, etc.) and subsections (A, B, C, etc.).
-   - Use descriptive headings: "### I. [Main Section Title]" and "#### I.A. [Subsection Title]".
+   - Use descriptive headings exactly as shown: "### I. [Main Section Title]" and "#### I.A. [Subsection Title]".
    - Do not use any additional formatting, such as bolding, italics, or underlining, for the section titles. 
-   - Include at least one subsection for each main section.
+   - Include at least one subsection for each main section, covering all major points from the transcript.
 
 3. For each main section:
-   - Immediately at the beginning of the main section (I, II, III), provide a 2-3 sentence beginner-friendly summary of that section.
-   - Include relevant subsections with a mix of paragraphs, bullet points, and numbered lists.
+   - Immediately at the beginning of the main section (I, II, III), provide a 3-4 sentence beginner-friendly summary of that section.
+   - Include relevant subsections with detailed explanations, examples, and where appropriate, direct quotes from the transcript.
+   - Use a mix of paragraphs, bullet points, and numbered lists to present information clearly.
    - Conclude each main section with at least one relatable analogy or metaphor as a subsection.
 
-4. Expand the content where necessary, integrating your own expert knowledge and insights.
+4. Expand the content where necessary:
+   - Integrate your own expert knowledge to provide context and deeper understanding.
+   - Explain complex concepts in simple terms, providing examples where possible.
+   - Include any relevant background information that helps clarify the topics discussed.
 
-5. Create a comprehensive bullet-point glossary of important terms, concepts, and names mentioned in the transcript.
+5. Create a bullet-point glossary:
+   - Include all important terms, concepts, and names mentioned in the transcript.
+   - Provide clear, concise definitions for each entry.
+   - Ensure the glossary covers both basic and advanced concepts discussed.
 
 6. Review your work:
-   - Ensure all sections are complete and properly structured.
-   - Confirm you've included summaries, subsections, and analogies for each main section.
-   - Remove any redundancies.
-   - Do not include this review in the final output.
+   - Ensure all sections are complete, properly structured, and reflect the depth of the original transcript.
+   - Confirm you've included summaries, detailed subsections, and analogies for each main section.
+   - Verify that all key points from the transcript are covered and fully explained.
+   - Remove any redundancies or information not relevant to the transcript's content.
+   - Do not include any disclaimers or notes about the completeness of the content.
+
+8. Strictly adhere to the content of the original transcript:
+   - Do not mention topics or promise explanations that are not actually covered in the transcript.
+   - If a topic is mentioned in the transcript but not elaborated on, note this briefly without promising further explanation.
 
 Begin the transcript processing directly, without any user engagement or questions at the start or end. Ensure all sections are fully completed before concluding.
 
