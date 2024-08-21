@@ -234,13 +234,28 @@ class SettingTab extends PluginSettingTab {
 			)
 			.addText((text) =>
 				text
-					.setPlaceholder("3")
+					.setPlaceholder("4096")
 					.setValue("" + this.plugin.settings.maxTokenSize)
 					.onChange(async (value) => {
 						const parsed = parseInt(value);
 						if (isNaN(parsed)) return;
 						await this.plugin.updateSettings({
 							maxTokenSize: parsed,
+						});
+					})
+			);
+		new Setting(containerEl)
+			.setName("Ollama Default Temperature")
+			.setDesc("Temperature for Ollama. The default value is 0.8.")
+			.addText((text) =>
+				text
+					.setPlaceholder("0.8")
+					.setValue("" + this.plugin.settings.temperature)
+					.onChange(async (value) => {
+						const parsed = parseFloat(value);
+						if (isNaN(parsed)) return;
+						await this.plugin.updateSettings({
+							temperature: parsed,
 						});
 					})
 			);

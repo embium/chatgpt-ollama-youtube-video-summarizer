@@ -6,12 +6,14 @@ export class OllamaClient {
 	baseUrl: string;
 	model: string;
 	tokenSize: number;
+	temperature: number;
 
 	constructor(settings: PluginSettings) {
 		this.settings = settings;
 		this.model = this.settings.ollamaModel;
 		this.baseUrl = this.settings.ollamaUrl;
 		this.tokenSize = this.settings.maxTokenSize;
+		this.temperature = this.settings.temperature;
 	}
 
 	async process(prompt: string): Promise<string> {
@@ -20,6 +22,7 @@ export class OllamaClient {
 			model: this.model,
 			options: {
 				num_ctx: this.tokenSize,
+				temperature: this.temperature,
 			},
 			stream: false,
 		};

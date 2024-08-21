@@ -4,6 +4,49 @@ import { OpenAIClient } from "./OpenAi/OpenAiClient";
 import { YoutubeMetadataParser } from "./YoutubeMetadataParser/YoutubeVideoMetadataParser";
 import { YoutubeTranscript } from "./YoutubeTranscript";
 
+const STEP_1_PROMPT = `Follow these instructions:
+- Rewrite the transcript, significantly shortening each section while retaining all topics, subtopics, and key points.
+- Begin directly with content.
+- Do not ask questions or engage with the user at the end.
+- Output the entire rewrite as a single, continuous paragraph without any headers, section breaks, or special formatting.
+- Use exactly 100 words total.
+- Leave out any names, titles, or other information that might not be relevant.
+- Exclude any introductory or concluding sections or statements. Focus only on the main content and key points of each section.
+- Ensure smooth flow between all content, regardless of original segment divisions.
+- Retaine specific examples, stories, or case studies that illustrate main points, even if in abbreviated form.
+- Combine all content into a single, cohesive paragraph without any line breaks or section divisions.
+
+Begin processing the transcript now:\n`;
+
+const STEP_2_PROMPT = `Prompt for Processing YouTube Video Transcripts:
+
+1. Analyze the entire video transcript thoroughly. 
+
+2. Create a hierarchical structure:
+   - Structure content into main sections (I, II, III, etc.) and subsections (A, B, C, etc.).
+   - Use descriptive headings: "### I. [Main Section Title]" and "#### I.A. [Subsection Title]".
+   - Do not use any additional formatting, such as bolding, italics, or underlining, for the section titles. 
+   - Include at least one subsection for each main section.
+
+3. For each main section:
+   - Immediately at the beginning of the main section (I, II, III), provide a 2-3 sentence beginner-friendly summary of that section.
+   - Include relevant subsections with a mix of paragraphs, bullet points, and numbered lists.
+   - Conclude each main section with at least one relatable analogy or metaphor as a subsection.
+
+4. Expand the content where necessary, integrating your own expert knowledge and insights.
+
+5. Create a comprehensive bullet-point glossary of important terms, concepts, and names mentioned in the transcript.
+
+6. Review your work:
+   - Ensure all sections are complete and properly structured.
+   - Confirm you've included summaries, subsections, and analogies for each main section.
+   - Remove any redundancies.
+   - Do not include this review in the final output.
+
+Begin the transcript processing directly, without any user engagement or questions at the start or end. Ensure all sections are fully completed before concluding.
+
+Process the transcript now:\n`;
+
 export class TranscriptSummarizer {
 	constructor(
 		private openAiClient: OpenAIClient,
@@ -15,143 +58,59 @@ export class TranscriptSummarizer {
 		const youtubeMetadata = await new YoutubeMetadataParser(
 			this.settings
 		).getVideoNote(url);
-
 		const transcriptList = await YoutubeTranscript.fetchTranscript(url);
 		const transcript = transcriptList
 			.map((transcript) => transcript.text)
 			.join(" ");
-		const words = transcript.split(" ");
+		const transcriptTokens = transcript.match(/.{1,3}/g);
+		if (transcriptTokens === null) {
+			throw new Error("Transcript has no tokens");
+		}
+		const promptTokens = STEP_1_PROMPT.match(/.{1,3}/g);
+		if (promptTokens === null) {
+			throw new Error("Transcript has no tokens");
+		}
+
+		console.log(`TRANSCRIPT TOKEN SIZE: ${transcriptTokens.length}`);
 
 		const chunksRewritten = [];
 
-		const chunkCount = Math.floor(
-			this.settings.maxTokenSize /
-				(words.length / this.settings.maxTokenSize)
-		);
-
-		for (let i = 0; i < words.length; i += this.settings.maxTokenSize) {
-			const transcriptChunk = words
-				.slice(i, i + this.settings.maxTokenSize)
-				.join(" ");
+		for (
+			let i = 0;
+			i < transcriptTokens.length;
+			i += this.settings.maxTokenSize
+		) {
+			const transcriptChunk = transcriptTokens
+				.slice(i, i + this.settings.maxTokenSize - promptTokens.length)
+				.join("");
 
 			const chunkRewritten = await this.rewriteTranscript(
-				transcriptChunk,
-				chunkCount
+				transcriptChunk
 			);
-
 			chunksRewritten.push(chunkRewritten);
 		}
 
-		const response = await this.summarize(
-			chunksRewritten.join("\n\n"),
-			this.settings.maxTokenSize
-		);
+		const prepareForNextStep = chunksRewritten.join("");
+		console.log(`STEP 1 PREPARED: ${prepareForNextStep.split(" ").length}`);
+
+		const response = await this.summarize(prepareForNextStep);
+
 		return youtubeMetadata.content + "\n" + response;
 	}
 
-	async rewriteTranscript(
-		transcript: string,
-		chunkCount: number
-	): Promise<string> {
-		return this.ollamaClient.process(
-			this.constructRewritePrompt(chunkCount) + transcript
-		);
+	async rewriteTranscript(transcript: string): Promise<string> {
+		if (this.settings.provider === "OpenAI") {
+			return this.openAiClient.query(STEP_1_PROMPT + transcript);
+		} else {
+			return this.ollamaClient.process(STEP_1_PROMPT + transcript);
+		}
 	}
 
-	async summarize(transcript: string, maxTokenSize: number): Promise<string> {
-		return this.ollamaClient.process(
-			this.constructSummarizePrompt(maxTokenSize) + transcript
-		);
-	}
-
-	constructRewritePrompt(chunksCount: number) {
-		const prompt = `You are a specialized content summarizer. Your task is to create a flowing summary of information chunks, treating every chunk as if it's from the middle of a continuous explanation. Keep it under ${chunksCount} words.
-
-Please process the following transcript chunk:\n\n`;
-		return prompt;
-	}
-
-	constructSummarizePrompt(maxTokenSize: number) {
-		const prompt = `As an expert in this transcript's subject matter, follow these instructions:
-
-General Guidelines:
-
-1. Begin each section directly with content.
-2. Refer to the speaker as "the speaker" throughout.
-3. Do not ask questions or engage with the user at the end.
-4. Keep the response under ${maxTokenSize} words.
-
-Formating Guidelines:
-
-1. Use "##" for main section titles.
-2. Use "###" for sub-section titles.
-3. Leave a blank line after each title.
-4. No additional formatting for headings.
-
----
-
-## Summary
-
-Write a concise summary (under 150 words) of the video's main points.
-
----
-
-## Enhanced Transcript
-
-Organize and enhance the transcript as follows:
-
-1. Identify central ideas across all segments.
-2. Present supporting details under each heading using bullet points, lists, or short paragraphs.
-3. Explain complex concepts in simple terms, using analogies or basic examples.
-4. Add a "Beginner's Explanation" subsection for advanced topics.
-5. Ensure smooth flow between all content, regardless of original segment divisions.
-6. Ignore any statements that appear to finalize or conclude a segment. Continue processing and enhancing the transcript as if it's part of a larger, continuous piece.
-7. For each concept or term that isn't common knowledge, provide a "Beginner's Explanation" subsection. This should include:
-   a. A simple definition in everyday language
-   b. A basic analogy or metaphor to help visualize the concept
-   c. An example of how this concept might be observed in daily life
-8. Assume the reader has no prior knowledge of AI, machine learning, or advanced computer science concepts. Explain everything as if speaking to a high school student with no specialized knowledge.
-9. If any technical terms are used, immediately follow them with a parenthetical explanation or footnote.
-
----
-
-## Glossary
-
-Create a glossary of key terms used in the transcript.
-
-### Definitions
-
-Provide a simple, jargon-free definition
-
-### Basic Examples
-
-Give an everyday example of how this concept might be observed or applied
-
-### Relation to Main Topic
-
-If applicable, explain how this term relates to the main topic of the video
-
----
-
-## Analogies
-
-Create relatable analogies for central points in the transcript.
-
----
-
-## Real World Examples
-
-Provide examples of real-world applications of the key points in the transcript.
-
----
-
-## Notes
-
-Create 10 bullet points with appropriate emojis, summarizing key moments or important points in the transcript.
-
----
-
-Begin processing the transcript segments as one continuous piece of content now:\n`;
-		return prompt;
+	async summarize(transcript: string): Promise<string> {
+		if (this.settings.provider === "OpenAI") {
+			return this.openAiClient.query(STEP_2_PROMPT + transcript);
+		} else {
+			return this.ollamaClient.process(STEP_2_PROMPT + transcript);
+		}
 	}
 }

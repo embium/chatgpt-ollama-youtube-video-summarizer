@@ -42,6 +42,7 @@ export const OPEN_AI_MODELS_MAX_TOKEN_SIZES = {
 };
 export const DEFAULT_PROVIDER = PROVIDER_CHOICES[0];
 export const DEFAULT_OLLAMA_MAX_TOKEN_SIZE = 4098;
+export const DEFAULT_TEMPERATURE = 0.8;
 export const DEFAULT_OPEN_AI_MODEL = OPEN_AI_MODEL_CHOICES[0];
 export const DEFAULT_OPEN_AI_TOKEN_SIZE =
 	OPEN_AI_MODELS_MAX_TOKEN_SIZES[
@@ -70,6 +71,9 @@ export interface PluginSettings {
 	/** Max Token Size in a Request */
 	maxTokenSize: number;
 
+	/** Temprature */
+	temperature: number;
+
 	/** Minimum Summary Lines */
 	summarySize: number;
 
@@ -87,7 +91,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	ollamaUrl: "http://localhost:11434",
 	ollamaModels: {},
 	ollamaModel: "No Model",
-	maxTokenSize: DEFAULT_OPEN_AI_TOKEN_SIZE,
+	maxTokenSize: DEFAULT_OLLAMA_MAX_TOKEN_SIZE,
+	temperature: DEFAULT_TEMPERATURE,
 	summarySize: DEFAULT_SUMMARY_SIZE,
 	templateFormat: DEFAULT_TEMPLATE,
 	dateFormat: DEFAULT_DATE_FORMAT,
