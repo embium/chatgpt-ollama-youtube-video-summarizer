@@ -4,58 +4,30 @@ import { OpenAIClient } from "./OpenAi/OpenAiClient";
 import { YoutubeMetadataParser } from "./YoutubeMetadataParser/YoutubeVideoMetadataParser";
 import { YoutubeTranscript } from "./YoutubeTranscript";
 
-const STEP_1_PROMPT = `Follow these instructions to rewrite a chunk of a YouTube video transcript:
-- You may use up to 100 words. Do not exceed this limit under any circumstances.
-- Begin the transcript processing immediately without any introductory text.
-- Output the entire rewrite as a single, continuous paragraph without headers, breaks, or special formatting.
-- Focus solely on the main content and key points, excluding introductions, conclusions, and irrelevant information such as names or titles.
-- Ensure smooth flow between all content, disregarding original segment divisions.
-- Retain specific examples, stories, or case studies that illustrate main points, even if abbreviated.
-- Significantly shorten each section while preserving all topics, subtopics, and key points.
-- If the provided transcript is too short (less than 10 words) or incomplete, stop processing immediately.
+const FIRST_STEP_PROMPT = `Rewrite the following text, maintaining as much of the original information as possible:
 
-Begin processing the transcript now:\n`;
+- Present the rewrite as a single, cohesive paragraph.
+- Begin and end with content; do not include phrases like "Here's a summary" or "In conclusion."
+- Correct any grammatical errors or inconsistencies.
+- Omit names of individuals mentioned.
+- Do not acknowledge these instructions in your response.
 
-const STEP_2_PROMPT = `As an expert in the subject matter of this transcript, please follow these instructions:
+Transcript:\n\n`;
 
-1. Analyze the entire video transcript thoroughly, ensuring close adherence to its content and structure.
+const LAST_STEP_PROMPT = `Please organize the following information into a well-structured educational resource. Use this format for the document:
 
-2. Create a hierarchical structure:
-   - Structure content into main sections (I, II, III, etc.) and subsections (A, B, C, etc.).
-   - Use descriptive headings exactly as shown: "### I. [Main Section Title]" and "#### I.A. [Subsection Title]".
-   - Do not use any additional formatting, such as bolding, italics, or underlining, for the section titles. 
-   - Include at least one subsection for each main section, covering all major points from the transcript.
+### I. [Primary Section Title]
+#### A. [Secondary Section Title]
 
-3. For each main section:
-   - Immediately at the beginning of the main section (I, II, III), provide a 3-4 sentence beginner-friendly summary of that section.
-   - Include relevant subsections with detailed explanations, examples, and where appropriate, direct quotes from the transcript.
-   - Use a mix of paragraphs, bullet points, and numbered lists to present information clearly.
-   - Conclude each main section with at least one relatable analogy or metaphor as a subsection.
+- Begin each primary section with a brief overview.
+- Develop secondary sections with relevant details, using paragraphs, lists, and examples.
+- Group related ideas into cohesive paragraphs and ensure a logical flow between sections.
+- Provide context, background information, or explanations within the content to enhance understanding.
+- Bold or italicize key terms and concepts, briefly explaining technical terms.
+- Edit for conciseness and clarity.
+- Format the document consistently and proofread for errors.
 
-4. Expand the content where necessary:
-   - Integrate your own expert knowledge to provide context and deeper understanding.
-   - Explain complex concepts in simple terms, providing examples where possible.
-   - Include any relevant background information that helps clarify the topics discussed.
-
-5. Create a bullet-point glossary:
-   - Include all important terms, concepts, and names mentioned in the transcript.
-   - Provide clear, concise definitions for each entry.
-   - Ensure the glossary covers both basic and advanced concepts discussed.
-
-6. Review your work:
-   - Ensure all sections are complete, properly structured, and reflect the depth of the original transcript.
-   - Confirm you've included summaries, detailed subsections, and analogies for each main section.
-   - Verify that all key points from the transcript are covered and fully explained.
-   - Remove any redundancies or information not relevant to the transcript's content.
-   - Do not include any disclaimers or notes about the completeness of the content.
-
-8. Strictly adhere to the content of the original transcript:
-   - Do not mention topics or promise explanations that are not actually covered in the transcript.
-   - If a topic is mentioned in the transcript but not elaborated on, note this briefly without promising further explanation.
-
-Begin the transcript processing directly, without any user engagement or questions at the start or end. Ensure all sections are fully completed before concluding.
-
-Process the transcript now:\n`;
+Here's the content to reorganize and expand upon:\n\n`;
 
 export class TranscriptSummarizer {
 	constructor(
@@ -72,55 +44,53 @@ export class TranscriptSummarizer {
 		const transcript = transcriptList
 			.map((transcript) => transcript.text)
 			.join(" ");
-		const transcriptTokens = transcript.match(/.{1,3}/g);
-		if (transcriptTokens === null) {
-			throw new Error("Transcript has no tokens");
+		const tokenRegex = /.{1,3} ?/g;
+		const transcriptTokens = transcript.match(tokenRegex) ?? [];
+		if (transcriptTokens.length == 0) {
+			throw new Error("Transcript is empty");
 		}
-		const promptTokens = STEP_1_PROMPT.match(/.{1,3}/g);
-		if (promptTokens === null) {
-			throw new Error("Transcript has no tokens");
-		}
-
 		console.log(`TRANSCRIPT TOKEN SIZE: ${transcriptTokens.length}`);
+
+		const step1PromptTokens = FIRST_STEP_PROMPT.match(tokenRegex) ?? [];
 
 		const chunksRewritten = [];
 
 		for (
 			let i = 0;
 			i < transcriptTokens.length;
-			i += this.settings.maxTokenSize
+			i += this.settings.maxTokenSize - step1PromptTokens.length
 		) {
 			const transcriptChunk = transcriptTokens
-				.slice(i, i + this.settings.maxTokenSize - promptTokens.length)
+				.slice(
+					i,
+					i + this.settings.maxTokenSize - step1PromptTokens.length
+				)
 				.join("");
-
-			const chunkRewritten = await this.rewriteTranscript(
+			const chunkRewritten = await this.process(
+				FIRST_STEP_PROMPT,
 				transcriptChunk
 			);
+			const wordsInRewrite = chunkRewritten.split(" ").length;
+			console.log(`WORDS IN REWRITE: ${wordsInRewrite}`);
 			chunksRewritten.push(chunkRewritten);
 		}
 
-		const prepareForNextStep = chunksRewritten.join("");
-		console.log(`STEP 1 PREPARED: ${prepareForNextStep.split(" ").length}`);
+		const firstStep = chunksRewritten.join(" ");
+		const firstStepTokens = firstStep.match(tokenRegex) ?? [];
+		console.log(`FIRST STEP TOKEN SIZE: ${firstStepTokens.length}`);
 
-		const response = await this.summarize(prepareForNextStep);
+		const response = await this.process(LAST_STEP_PROMPT, firstStep);
+		const finalStepTokens = response.match(tokenRegex) ?? [];
+		console.log(`FINAL STEP TOKEN SIZE: ${finalStepTokens.length}`);
 
 		return youtubeMetadata.content + "\n" + response;
 	}
 
-	async rewriteTranscript(transcript: string): Promise<string> {
+	async process(prompt: string, transcript: string): Promise<string> {
 		if (this.settings.provider === "OpenAI") {
-			return this.openAiClient.query(STEP_1_PROMPT + transcript);
+			return this.openAiClient.query(prompt + transcript);
 		} else {
-			return this.ollamaClient.process(STEP_1_PROMPT + transcript);
-		}
-	}
-
-	async summarize(transcript: string): Promise<string> {
-		if (this.settings.provider === "OpenAI") {
-			return this.openAiClient.query(STEP_2_PROMPT + transcript);
-		} else {
-			return this.ollamaClient.process(STEP_2_PROMPT + transcript);
+			return this.ollamaClient.process(prompt + transcript);
 		}
 	}
 }
